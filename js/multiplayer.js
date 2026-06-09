@@ -87,25 +87,17 @@ function handleHostMsg(d) {
   }
   if (d.type === 'hello_back') {
     myIndex = d.yourIndex;
+    // allPlayers is now always complete (host sends this after 'hello' is processed)
     players = d.allPlayers.map((p, i) => ({
       ...p, score: 0, body: [],
       dx: P_STARTS[i].dx, dy: P_STARTS[i].dy,
       ndx: P_STARTS[i].dx, ndy: P_STARTS[i].dy,
       alive: true
     }));
-    // Add placeholder for guest if not already in array
-    if (players.length < myIndex + 1) {
-      players.push({
-        id: myPeerId, name: myName, color: P_COLORS[myIndex], score: 0, body: [],
-        dx: P_STARTS[myIndex].dx, dy: P_STARTS[myIndex].dy,
-        ndx: P_STARTS[myIndex].dx, ndy: P_STARTS[myIndex].dy,
-        alive: true
-      });
-    }
     showScreen('waitScreen');
     renderWaitLobby();
   }
-  if (d.type === 'lobby_update') {
+    if (d.type === 'lobby_update') {
     players = d.players.map((p, i) => ({
       ...p, score: 0, body: [],
       dx: P_STARTS[i].dx, dy: P_STARTS[i].dy,
@@ -171,7 +163,12 @@ function addGuest(pid, name) {
     ndx: P_STARTS[idx].dx, ndy: P_STARTS[idx].dy,
     alive: true
   });
-  broadcastAll({ type: 'lobby_update', players: players.map(p => ({ id: p.id, name: p.name, color: p.color })) });
+  // Notify already-connected guests only; the new guest gets the full list via hello_back
+  Object.entries(guestConns).forEach(([peerId, c]) => {
+    if (peerId !== pid) {
+      try { c.send({ type: 'lobby_update', players: players.map(p => ({ id: p.id, name: p.name, color: p.color })) }); } catch (e) {}
+    }
+  });
   renderHostLobby();
   showToast(name + ' joined! 👋', 'good');
 }

@@ -94,17 +94,20 @@ function showHost() {
         removePeer(conn.peer);
         renderHostLobby();
       });
-      conn.send({
-        type: 'hello_back',
-        yourIndex: players.length,
-        colors: P_COLORS,
-        allPlayers: players.map(p => ({ id: p.id, name: p.name, color: p.color }))
-      });
+      // hello_back is sent AFTER receiving 'hello' so allPlayers is complete
     });
     conn.on('data', d => {
       if (d.type === 'hello') {
         addGuest(conn.peer, d.name);
         renderHostLobby();
+        // Now send hello_back with the fully-populated player list
+        const guestIndex = players.findIndex(p => p.id === conn.peer);
+        conn.send({
+          type: 'hello_back',
+          yourIndex: guestIndex,
+          colors: P_COLORS,
+          allPlayers: players.map(p => ({ id: p.id, name: p.name, color: p.color }))
+        });
       } else if (d.type === 'dir') {
         handleGuestMsg(conn.peer, d);
       }
