@@ -89,7 +89,6 @@ function showHost() {
         return;
       }
       guestConns[conn.peer] = conn;
-      conn.on('data', d => handleGuestMsg(conn.peer, d));
       conn.on('close', () => {
         delete guestConns[conn.peer];
         removePeer(conn.peer);
@@ -106,6 +105,8 @@ function showHost() {
       if (d.type === 'hello') {
         addGuest(conn.peer, d.name);
         renderHostLobby();
+      } else if (d.type === 'dir') {
+        handleGuestMsg(conn.peer, d);
       }
     });
   });

@@ -93,6 +93,15 @@ function handleHostMsg(d) {
       ndx: P_STARTS[i].dx, ndy: P_STARTS[i].dy,
       alive: true
     }));
+    // Add placeholder for guest if not already in array
+    if (players.length < myIndex + 1) {
+      players.push({
+        id: myPeerId, name: myName, color: P_COLORS[myIndex], score: 0, body: [],
+        dx: P_STARTS[myIndex].dx, dy: P_STARTS[myIndex].dy,
+        ndx: P_STARTS[myIndex].dx, ndy: P_STARTS[myIndex].dy,
+        alive: true
+      });
+    }
     showScreen('waitScreen');
     renderWaitLobby();
   }
