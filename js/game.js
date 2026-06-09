@@ -37,6 +37,7 @@ let invincibleFrames = false;
 let invincibleTimer = null;
 let lastDirTime = 0;
 let pendingDir = null;
+let tickCount = 0;  // Track ticks to prevent immediate game over
 
 // DOM Elements
 let canvas, ctx;
@@ -48,6 +49,10 @@ function initGame() {
 }
 
 function calcDims() {
+  if (!canvas) {
+    console.error('Canvas not initialized. Call initGame() first.');
+    return;
+  }
   const header = document.querySelector('.game-header');
   const headerHeight = header ? header.offsetHeight : 60;
   const controls = document.querySelector('.mobile-controls');
@@ -350,8 +355,20 @@ function updateHeader() {
 function showGameOver() {
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const medals = ['🥇', '🥈', '🥉', '4️⃣'];
-  document.getElementById('goTitle').textContent = players.length > 1 ? (sorted[0].name + ' Wins! 🏆') : 'Game Over!';
-  document.getElementById('goResults').innerHTML = sorted.map((p, i) => `
+  
+  // Clear and rebuild overlay to ensure no old content persists
+  const overlay = document.getElementById('gameOverlay');
+  overlay.innerHTML = '';
+  
+  const title = document.createElement('div');
+  title.id = 'goTitle';
+  title.className = 'go-title';
+  title.textContent = players.length > 1 ? (sorted[0].name + ' Wins! 🏆') : 'Game Over!';
+  
+  const results = document.createElement('div');
+  results.id = 'goResults';
+  results.className = 'results';
+  results.innerHTML = sorted.map((p, i) => `
     <div class="result-row">
       <div class="result-medal">${medals[i]}</div>
       <div class="result-name" style="color:${p.color};">${p.name}</div>
@@ -360,15 +377,32 @@ function showGameOver() {
     </div>
   `).join('');
   
-  // Only show Play Again button for host (singleplayer or multiplayer host)
-  const playAgainBtn = document.getElementById('playAgainBtn');
-  if (isMultiplayer && !isHost) {
-    playAgainBtn.style.display = 'none';
-  } else {
-    playAgainBtn.style.display = 'block';
+  overlay.appendChild(title);
+  overlay.appendChild(results);
+  
+  // Only show Play Again button for host
+  if (!(isMultiplayer && !isHost)) {
+    const btnRow = document.createElement('div');
+    btnRow.className = 'btn-row';
+    
+    const playAgainBtn = document.createElement('button');
+    playAgainBtn.id = 'playAgainBtn';
+    playAgainBtn.className = 'btn btn-green';
+    playAgainBtn.textContent = '▶ Play Again';
+    playAgainBtn.onclick = playAgain;
+    
+    const menuBtn = document.createElement('button');
+    menuBtn.id = 'menuBtn';
+    menuBtn.className = 'btn btn-ghost';
+    menuBtn.textContent = '↺ Menu';
+    menuBtn.onclick = backToMenu;
+    
+    btnRow.appendChild(playAgainBtn);
+    btnRow.appendChild(menuBtn);
+    overlay.appendChild(btnRow);
   }
   
-  document.getElementById('gameOverlay').style.display = 'flex';
+  overlay.style.display = 'flex';
   
   // If multiplayer and host, invalidate game session after a short delay
   if (isMultiplayer && isHost) {
@@ -383,11 +417,17 @@ function startGameLoop() {
   clearInterval(timerInterval);
   gameRunning = true;
   elapsed = 0;
+  tickCount = 0;  // Reset tick counter for new game
   
   // Skip dimension calculation for guests—use host's dimensions from deserialized state
   if (!(isMultiplayer && !isHost)) {
     calcDims();
   }
+  
+  // Clear canvas immediately to remove any residual drawings
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0a1220';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   
   renderGame();
   updateHeader();
@@ -407,10 +447,12 @@ function startGameLoop() {
   gameTimer = setInterval(() => {
     if (!gameRunning) return;
     tick();
+    tickCount++;
     foods.forEach(f => f.pulse = (f.pulse || 0) + 0.15);
     const alive = players.filter(p => p.alive).length;
     
-    if (alive === 0) {
+    // Only allow game over after at least 3 ticks to prevent immediate end
+    if (alive === 0 && tickCount >= 3) {
       gameRunning = false;
       clearInterval(gameTimer);
       clearInterval(timerInterval);

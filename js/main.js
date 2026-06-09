@@ -166,11 +166,27 @@ function playAgain() {
     showToast('Only the host can restart', 'info');
     return;
   }
-  document.getElementById('gameOverlay').style.display = 'none';
+  
+  // Clear overlay immediately
+  const overlay = document.getElementById('gameOverlay');
+  overlay.style.display = 'none';
+  overlay.innerHTML = '';
+  
+  // Reset all game state
+  foods = [];
+  tickCount = 0;
+  elapsed = 0;
+  gameRunning = false;
+  
+  // Reinitialize game state
   initGameState();
+  
+  // Broadcast new game start to guests
   if (isMultiplayer && isHost) {
     broadcastAll({ type: 'start', gameState: serializeState() });
   }
+  
+  // Start fresh game loop
   startGameLoop();
 }
 
@@ -208,22 +224,36 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Event listeners
-document.getElementById('singlePlayerBtn').addEventListener('click', startSinglePlayer);
-document.getElementById('multiplayerBtn').addEventListener('click', showMultiplayerMenu);
-document.getElementById('hostGameBtn').addEventListener('click', showHost);
-document.getElementById('joinGameBtn').addEventListener('click', showJoin);
-document.getElementById('backFromMultiBtn').addEventListener('click', backToMenu);
-document.getElementById('backFromHostBtn').addEventListener('click', backToMenu);
-document.getElementById('backFromJoinBtn').addEventListener('click', backToMenu);
-document.getElementById('leaveWaitBtn').addEventListener('click', backToMenu);
-document.getElementById('hostStartBtn').addEventListener('click', hostStartGame);
-document.getElementById('joinRoomBtn').addEventListener('click', joinGame);
-document.getElementById('playAgainBtn').addEventListener('click', playAgain);
-document.getElementById('menuBtn').addEventListener('click', backToMenu);
-document.getElementById('gc')?.addEventListener('click', () => document.getElementById('gc')?.focus());
-
-// Initialize
+// Initialize game first before attaching listeners
 initGame();
 setupMobileControls();
+
+// Event listeners - only attach to elements that exist in static HTML
+const singlePlayerBtn = document.getElementById('singlePlayerBtn');
+const multiplayerBtn = document.getElementById('multiplayerBtn');
+const hostGameBtn = document.getElementById('hostGameBtn');
+const joinGameBtn = document.getElementById('joinGameBtn');
+const backFromMultiBtn = document.getElementById('backFromMultiBtn');
+const backFromHostBtn = document.getElementById('backFromHostBtn');
+const backFromJoinBtn = document.getElementById('backFromJoinBtn');
+const leaveWaitBtn = document.getElementById('leaveWaitBtn');
+const hostStartBtn = document.getElementById('hostStartBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const gcCanvas = document.getElementById('gc');
+
+if (singlePlayerBtn) singlePlayerBtn.addEventListener('click', startSinglePlayer);
+if (multiplayerBtn) multiplayerBtn.addEventListener('click', showMultiplayerMenu);
+if (hostGameBtn) hostGameBtn.addEventListener('click', showHost);
+if (joinGameBtn) joinGameBtn.addEventListener('click', showJoin);
+if (backFromMultiBtn) backFromMultiBtn.addEventListener('click', backToMenu);
+if (backFromHostBtn) backFromHostBtn.addEventListener('click', backToMenu);
+if (backFromJoinBtn) backFromJoinBtn.addEventListener('click', backToMenu);
+if (leaveWaitBtn) leaveWaitBtn.addEventListener('click', backToMenu);
+if (hostStartBtn) hostStartBtn.addEventListener('click', hostStartGame);
+if (joinRoomBtn) joinRoomBtn.addEventListener('click', joinGame);
+if (gcCanvas) gcCanvas.addEventListener('click', () => document.getElementById('gc')?.focus());
+
+// Note: playAgainBtn and menuBtn are created dynamically in showGameOver()
+// so we don't attach listeners to them here
+
 showScreen('menuScreen');

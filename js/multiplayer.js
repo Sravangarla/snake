@@ -37,7 +37,8 @@ function serializeState() {
     foods: [...foods],
     elapsed,
     COLS,
-    ROWS
+    ROWS,
+    invincibleFrames
   };
 }
 
@@ -47,6 +48,7 @@ function deserializeState(s) {
   elapsed = s.elapsed;
   COLS = s.COLS;
   ROWS = s.ROWS;
+  invincibleFrames = s.invincibleFrames !== undefined ? s.invincibleFrames : false;
   canvas.width = COLS * CELL;
   canvas.height = ROWS * CELL;
 }
