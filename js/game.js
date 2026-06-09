@@ -372,6 +372,11 @@ function startGameLoop() {
   gameRunning = true;
   elapsed = 0;
   
+  if (isMultiplayer && !isHost) {
+    // The host drives the multiplayer game state. Guests only render updates.
+    return;
+  }
+  
   timerInterval = setInterval(() => {
     elapsed++;
     const m = Math.floor(elapsed / 60);
@@ -389,8 +394,14 @@ function startGameLoop() {
       gameRunning = false;
       clearInterval(gameTimer);
       clearInterval(timerInterval);
+      if (isMultiplayer && isHost) {
+        broadcastAll({ type: 'game_over', gameState: serializeState() });
+      }
       showGameOver();
     } else {
+      if (isMultiplayer && isHost) {
+        broadcastAll({ type: 'tick', gameState: serializeState() });
+      }
       renderGame();
       updateHeader();
     }

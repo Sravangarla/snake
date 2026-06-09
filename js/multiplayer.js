@@ -102,6 +102,7 @@ function handleHostMsg(d) {
   }
   if (d.type === 'start') {
     deserializeState(d.gameState);
+    showScreen('gameScreen');
     startGameLoop();
   }
   if (d.type === 'tick') {
