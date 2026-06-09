@@ -170,6 +170,13 @@ function playAgain() {
   startGameLoop();
 }
 
+function endGameSession() {
+  // Forward to multiplayer module
+  if (typeof window.endGameSession === 'function') {
+    window.endGameSession();
+  }
+}
+
 // Mobile controls
 function setupMobileControls() {
   const btns = document.querySelectorAll('.ctrl-btn');

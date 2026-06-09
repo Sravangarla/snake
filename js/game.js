@@ -359,18 +359,38 @@ function showGameOver() {
       <div class="result-len">📏${p.body?.length || 0}</div>
     </div>
   `).join('');
+  
+  // Only show Play Again button for host (singleplayer or multiplayer host)
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  if (isMultiplayer && !isHost) {
+    playAgainBtn.style.display = 'none';
+  } else {
+    playAgainBtn.style.display = 'block';
+  }
+  
   document.getElementById('gameOverlay').style.display = 'flex';
+  
+  // If multiplayer and host, invalidate game session after a short delay
+  if (isMultiplayer && isHost) {
+    setTimeout(() => {
+      endGameSession();
+    }, 3000);
+  }
 }
 
 function startGameLoop() {
-  calcDims();
-  renderGame();
-  updateHeader();
-  
   clearInterval(gameTimer);
   clearInterval(timerInterval);
   gameRunning = true;
   elapsed = 0;
+  
+  // Skip dimension calculation for guests—use host's dimensions from deserialized state
+  if (!(isMultiplayer && !isHost)) {
+    calcDims();
+  }
+  
+  renderGame();
+  updateHeader();
   
   if (isMultiplayer && !isHost) {
     // The host drives the multiplayer game state. Guests only render updates.

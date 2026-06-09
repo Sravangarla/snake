@@ -75,6 +75,11 @@ function handleGuestMsg(pid, d) {
 }
 
 function handleHostMsg(d) {
+  if (d.type === 'session_ended') {
+    showToast('Game session has ended.', 'info');
+    backToMenu();
+    return;
+  }
   if (d.type === 'full') {
     showToast('Room is full!', 'bad');
     backToMenu();
@@ -165,4 +170,28 @@ function addGuest(pid, name) {
 function removePeer(pid) {
   players = players.filter(p => p.id !== pid);
   broadcastAll({ type: 'lobby_update', players: players.map(p => ({ id: p.id, name: p.name, color: p.color })) });
+}
+
+function endGameSession() {
+  // Close all peer connections and invalidate the game session
+  if (isHost) {
+    // Notify all guests that session is ending
+    broadcastAll({ type: 'session_ended' });
+  } else {
+    // Guest notifies host
+    if (hostConn) {
+      try {
+        hostConn.send({ type: 'session_ended' });
+      } catch (e) { }
+    }
+  }
+  
+  // Clean up peer connection completely
+  cleanupPeer();
+  
+  // Force back to menu after cleanup
+  showToast('Game session ended. Return to menu to play again.', 'info');
+  setTimeout(() => {
+    showScreen('menuScreen');
+  }, 500);
 }
