@@ -153,6 +153,14 @@ function joinGame() {
       showToast('Disconnected from host', 'bad');
       backToMenu();
     });
+    // Add error handler for host connection
+    hostConn.on('error', err => {
+      console.error('Host connection error:', err);
+      showToast('Connection error', 'bad');
+      st.textContent = 'Connection failed';
+      st.className = 'status-bar error';
+      setTimeout(() => backToMenu(), 1500);
+    });
   });
 }
 

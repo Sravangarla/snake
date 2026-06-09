@@ -25,7 +25,7 @@ function cleanupPeer() {
 
 function initPeer(id, onOpen) {
   cleanupPeer();
-  const opts = { host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0 };
+  const opts = { host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 2 };
   peer = id ? new Peer(id, opts) : new Peer(opts);
   peer.on('open', onOpen);
   peer.on('error', e => { showToast('Connection error: ' + e.type, 'bad'); });
@@ -203,3 +203,14 @@ function endGameSession() {
     showScreen('menuScreen');
   }, 500);
 }
+
+// Note: The host connection error handler should be added inside joinGame() function
+// where hostConn.on('close') is defined. Since joinGame() is not in this file,
+// you'll need to add it wherever joinGame() is defined (likely in main.js or similar).
+// Here's the code to add:
+/*
+hostConn.on('error', err => {
+  console.error('Host connection error:', err);
+  showToast('Connection error', 'bad');
+});
+*/

@@ -210,17 +210,25 @@ function applyDirection(s, dir) {
 function sendDirection(dir) {
   const me = players[myIndex];
   if (!me || !me.alive) return;
-  
+
+  // Guest only sends direction to host
+  if (isMultiplayer && !isHost) {
+    if (window.sendDirectionToHost) {
+      window.sendDirectionToHost(dir);
+    }
+    return;
+  }
+
   const now = Date.now();
+
   if (now - lastDirTime < 50) {
     pendingDir = dir;
     return;
   }
-  
+
   if (applyDirection(me, dir)) {
     lastDirTime = now;
     pendingDir = null;
-    if (window.sendDirectionToHost) window.sendDirectionToHost(dir);
   }
 }
 
@@ -354,6 +362,7 @@ function updateHeader() {
 
 function showGameOver() {
   const sorted = [...players].sort((a, b) => b.score - a.score);
+  const aliveWinner = players.find(p => p.alive);
   const medals = ['🥇', '🥈', '🥉', '4️⃣'];
   
   // Clear and rebuild overlay to ensure no old content persists
@@ -363,7 +372,13 @@ function showGameOver() {
   const title = document.createElement('div');
   title.id = 'goTitle';
   title.className = 'go-title';
-  title.textContent = players.length > 1 ? (sorted[0].name + ' Wins! 🏆') : 'Game Over!';
+  
+  if (players.length > 1) {
+    const winner = aliveWinner || sorted[0];
+    title.textContent = winner.name + ' Wins! 🏆';
+  } else {
+    title.textContent = 'Game Over!';
+  }
   
   const results = document.createElement('div');
   results.id = 'goResults';
@@ -404,12 +419,7 @@ function showGameOver() {
   
   overlay.style.display = 'flex';
   
-  // If multiplayer and host, invalidate game session after a short delay
-  if (isMultiplayer && isHost) {
-    setTimeout(() => {
-      endGameSession();
-    }, 3000);
-  }
+  // Session stays alive for Play Again - automatic room destruction removed
 }
 
 function startGameLoop() {
@@ -449,23 +459,40 @@ function startGameLoop() {
     tick();
     tickCount++;
     foods.forEach(f => f.pulse = (f.pulse || 0) + 0.15);
-    const alive = players.filter(p => p.alive).length;
+    const alivePlayers = players.filter(p => p.alive);
     
-    // Only allow game over after at least 3 ticks to prevent immediate end
-    if (alive === 0 && tickCount >= 3) {
+    // Multiplayer: last snake alive wins
+    if (players.length > 1 && alivePlayers.length <= 1 && tickCount >= 3) {
       gameRunning = false;
       clearInterval(gameTimer);
       clearInterval(timerInterval);
       if (isMultiplayer && isHost) {
-        broadcastAll({ type: 'game_over', gameState: serializeState() });
+        broadcastAll({
+          type: 'game_over',
+          gameState: serializeState()
+        });
       }
       showGameOver();
-    } else {
-      if (isMultiplayer && isHost) {
-        broadcastAll({ type: 'tick', gameState: serializeState() });
-      }
-      renderGame();
-      updateHeader();
+      return;
     }
+    
+    // Single player
+    if (players.length === 1 && alivePlayers.length === 0 && tickCount >= 3) {
+      gameRunning = false;
+      clearInterval(gameTimer);
+      clearInterval(timerInterval);
+      showGameOver();
+      return;
+    }
+    
+    if (isMultiplayer && isHost) {
+      broadcastAll({
+        type: 'tick',
+        gameState: serializeState()
+      });
+    }
+    
+    renderGame();
+    updateHeader();
   }, TICK);
 }
