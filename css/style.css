@@ -166,6 +166,16 @@ body {
 .btn:disabled {
   opacity: 0.5;
   transform: none;
+  cursor: not-allowed;
+}
+
+/* Wait Screen Spinner */
+.wait-spinner-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  margin: 5px 0;
 }
 
 /* Divider */
@@ -243,6 +253,36 @@ body {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 2px 7px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .card {
+    padding: 16px 16px;
+    max-width: 100%;
+  }
+  
+  .btn {
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+  
+  .player-item {
+    padding: 10px 10px;
+  }
+  
+  .player-item-name {
+    font-size: 13px;
+  }
+  
+  .status-bar {
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  
+  .card-title {
+    font-size: 10px;
+  }
 }
 
 /* Food Legend */
